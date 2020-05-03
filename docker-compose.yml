@@ -1,0 +1,52 @@
+version: '3'
+services:
+  postgres:
+    image: 'postgres:latest'  # This image comes from your repository or hub.docker.com
+    environment:
+      - POSTGRES_PASSWORD=postgres_password
+  redis:
+    image: 'redis:latest' # This image also in your local repo or hub.docker.com
+  nginx:
+    depends_on:
+      - api
+      - client
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      - '3050:80'
+  api:
+    depends_on:
+      - postgres
+    build:
+      dockerfile: Dockerfile.dev  # Not specifying an image because it will be built from the Dockerfile
+      context: ./server           # Find the 'server' directory and build the server image
+    volumes:
+      - /app/node_modules   # By adding it here Composer won't try to override or modify naything in this folder
+      - ./server:/app       # Anything going to the /app directory will be redirected to the ./server in our proj. Except for node_modules. 
+    environment:            # Variables that are requested under ./server/keys.js. In docker containers variables are applied at run time
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379    # Default port. More info: https://hub.docker.com/_/redis
+      - PGUSER=postgres   # Using default postgres user, host, database, password and port
+      - PGHOST=postgres
+      - PGDATABASE=postgres
+      - PGPASSWORD=postgres_password
+      - PGPORT=5432
+  client:
+    build:
+      dockerfile: Dockerfile.dev  # Not specifying an image because it will be built from the Dockerfile
+      context: ./client           # Find the 'client' directory and build the server image
+    volumes:
+      - /app/node_modules
+      - ./client:/app
+  worker:
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    build:
+      dockerfile: Dockerfile.dev  # Not specifying an image because it will be built from the Dockerfile
+      context: ./worker           # Find the 'client' directory and build the server image
+    volumes:
+      - /app/node_modules
+      - ./worker:/app
