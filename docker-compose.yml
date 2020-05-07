@@ -3,9 +3,10 @@ services:
   postgres:
     image: 'postgres:latest'  # This image comes from your repository or hub.docker.com
     environment:
+      - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres_password
   redis:
-    image: 'redis:latest' # This image also in your local repo or hub.docker.com
+    image: 'redis:2.8' # This image also in your local repo or hub.docker.com
   nginx:
     depends_on:
       - api
